@@ -1,4 +1,4 @@
-module mvp
+module github.com/u2lentaru/GoCinema
 
 go 1.15
 
