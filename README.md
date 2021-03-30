@@ -1,5 +1,5 @@
 # GoCinema - online cinema
-<img alt="GitHub" src="https://img.shields.io/github/license/u2lentaru/GoCinema"> [![Go Report Card](https://goreportcard.com/badge/github.com/u2lentaru/GoCinema)](https://goreportcard.com/report/github.com/u2lentaru/GoCinema) ![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/u2lentaru/GoCinema)
+![GitHub](https://img.shields.io/github/license/u2lentaru/GoCinema) [![Go Report Card](https://goreportcard.com/badge/github.com/u2lentaru/GoCinema)](https://goreportcard.com/report/github.com/u2lentaru/GoCinema) ![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/u2lentaru/GoCinema)
 
 TODO
 * GitLabCI=>GitHub.Actions
