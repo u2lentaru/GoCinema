@@ -1,0 +1,136 @@
+{{define "MyTemplate"}}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style type="text/css">
+      #navbar {
+        margin: 0;
+        padding: 0;
+        list-style-type: none;
+        /* border: 2px solid #0066FF; */
+        border: 2px solid #7d31c5;
+        border-radius: 20px 5px;
+        /* width: 250px; */
+        text-align: center;
+        /* background-color: #33ADFF; */
+        background-color: #6a1b9a;
+      }
+      #navbar li { display: inline; }
+      #navbar a {
+        color: #fff;
+        padding: 5px 10px;
+        text-decoration: none;
+        font-weight: bold;
+        display: inline-block;
+        width: 100px;
+      }
+      #navbar a:hover {
+        border-radius: 20px 5px;
+        /* background-color: #0066FF; */
+        background-color: #7d31c5;
+      }
+      .header-h1 {
+        position: relative;
+        margin-bottom: .5rem;
+        text-align: center;
+    }
+    .header-h1 h1 {
+        display: inline-block;
+        background: #fff;
+        margin-bottom: 0;
+        font-size: 1.5rem;
+        text-transform: uppercase;
+        padding: .5rem 1.5rem;
+        border: .125rem solid #6a1b9a;
+        color: #6a1b9a;
+    }
+    .header-h1 h1::after {
+        content: "";
+        position: absolute;
+        background: #6a1b9a;
+        height: .125rem;
+        left: 0;
+        top: 50%;
+        width: 100%;
+        transform: translateY(-50%);
+        z-index: -999;
+    }
+    .header-h1-dark h1 {
+        background: #6a1b9a;
+        color: #fff;
+    }
+    .rounded {
+    counter-reset: li; 
+    list-style: none; 
+    font: 14px "Trebuchet MS", "Lucida Sans";
+    padding: 0;
+    text-shadow: 0 1px 0 rgba(255,255,255,.5);
+    }
+    .rounded a {
+    position: relative;
+    display: block;
+    padding: .4em .4em .4em 2em;
+    margin: .5em 0;
+    background: #DAD2CA;
+    color: #444;
+    text-decoration: none;
+    border-radius: .3em;
+    transition: .3s ease-out;
+    }
+    .rounded a:hover {background: #E9E4E0;}
+    .rounded a:hover:before {transform: rotate(360deg);}
+    .rounded a:before {
+    content: counter(li);
+    counter-increment: li;
+    position: absolute;
+    left: -1.3em;
+    top: 50%;
+    margin-top: -1.3em;
+    background: #8FD4C1;
+    height: 2em;
+    width: 2em;
+    line-height: 2em;
+    border: .3em solid white;
+    text-align: center;
+    font-weight: bold;
+    border-radius: 2em;
+    transition: all .3s ease-out;
+    }
+    </style>
+    <title>List of movies</title>
+</head>
+<body>
+    <!-- <div class=menu>
+        <div><a href="/profile/">Profile</a></div>
+        <div><a href="/login">Login</a></div>
+    </div> -->
+    {{if(eq .W "2")}}
+    <ul id="navbar" style = "width: 390px;">
+    {{end}}
+    {{if(eq .W "1")}}
+    <ul id="navbar" style = "width: 250px;">
+    {{end}}
+    {{if(eq .W "0")}}
+    <ul id="navbar" style = "width: 160px;">
+    {{end}}
+    <!-- <ul id="navbar" style = "width: 250px;"> -->
+        <li><a href="/login">Login</a></li>
+        {{if(eq .W "1")}}
+        <li><a href="/profile/">Profile</a></li>
+        {{end}}
+        {{if(eq .W "2")}}
+        <li><a href="/profile/">Profile</a></li>
+        <li><a href="/admin/">Admin</a></li>
+        {{end}}
+      </ul>
+    <div class=header-h1><h1>{{.Title}}</h1></div>
+    <ol class="rounded">
+        {{range .List}}
+        <li><a href="/movie/{{.ID}}">{{.Name}}</a></li>
+        {{end}}
+    </ol>
+</body>
+</html>
+{{end}}

@@ -1,0 +1,83 @@
+{{define "MyMovie"}}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- <link rel="stylesheet" href="./assets/movie.css"> -->
+    <style type="text/css">
+    * {box-sizing: border-box;}
+    .product-item {
+      width: 560px;
+      height: 315px;
+      text-align: center;
+      margin: 0 auto;
+      border-bottom: 2px solid #F5F5F5;
+      background: white;
+      font-family: "Open Sans";
+      transition: .3s ease-in;
+    }
+    .product-item:hover {border-bottom: 2px solid #fc5a5a;}
+    .product-item iframe {
+      display: block;
+      width: 100%;
+    }
+    .product-list {
+      background: #fafafa;
+      padding: 15px 0;
+    }
+    .product-list h3 {
+      font-size: 18px;
+      font-weight: 400;
+      color: #444444;
+      margin: 0 0 10px 0;
+    }
+    .price {
+      font-size: 16px;
+      color: #fc5a5a;
+      display: block;
+      margin-bottom: 12px;
+    }
+    .button {
+      text-decoration: none;
+      display: inline-block;
+      padding: 0 12px;
+      background: #cccccc;
+      color: white;
+      text-transform: uppercase;
+      font-size: 12px;
+      line-height: 28px;
+      transition: .3s ease-in;
+    }
+    .product-item:hover .button {background: #fc5a5a;}
+    </style>
+    <title>{{.Name}}</title>
+</head>
+<body>
+    <!-- <p>Viewing&nbsp{{.Name}}</p>
+    <p>{{.URL}} </p> -->
+    <!-- <iframe width="560" height="315" src="{{.URL}}"
+    frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+    <p><a href="/">Back</a></p> -->
+    <!-- NEW -->
+    <form action="/saveorder/" method="GET" enctype="application/x-www-form-urlencoded">
+      <div><input type="hidden" name="id" value="{{.ID}}"></div>
+    <div class="product-item" style="text-align: center">
+    {{if(eq .Rents 0)}}
+    <p><img src="{{.Poster}}" width="315" height="560"></p>
+    {{else}}
+      <iframe width="560" height="315" src="{{.URL}}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+    {{end}}
+        <div class="product-list" style="text-align: center">
+          <h3>{{.Name}}</h3>
+            <span class="price">₽ 100</span>
+            {{if(ne .User "")}}    
+            <p><a href="/saveorder/" class="button">RENT</a></p>
+            {{end}}
+            <p><a href="/">Back</a></p>
+        </div>
+      </div>
+    </form>
+</body>
+</html>
+{{end}}

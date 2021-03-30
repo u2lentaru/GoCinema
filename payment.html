@@ -1,0 +1,18 @@
+{{define "MyPayment"}}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment</title>
+    <form action="/savepayment/" method="GET" enctype="application/x-www-form-urlencoded">
+    <p>Текущий баланс&nbsp;:&nbsp;{{.Balance}}</p>
+    <input type="text" placeholder="0" name="addition"><br>
+    <div><input type="submit" value="Add"></div>
+    </form>
+</head>
+<body>
+    <p><a href="/profile/">Назад</a></p>
+</body>
+</html>
+{{end}}

@@ -1,0 +1,39 @@
+services:
+  - docker:dind 
+
+variables:
+  IMAGE: registry.gitlab.com/cinema_agile/mvp
+  GO111MODULE: 'on'
+  GOOS: 'linux'
+  GOARCH: 'amd64'
+  DOCKER_HOST: tcp://docker:2375
+
+stages:
+  - build_binary
+  - lint_and_test
+  - create_image
+
+run_linter:
+  tags: [docker]
+  stage: lint_and_test
+  image: registry.gitlab.com/gitlab-org/gitlab-build-images:golangci-lint-alpine
+  script:
+    - '[ -e .golangci.yml ] || cp /golangci/.golangci.yml .'
+    - golangci-lint run 
+
+build_binary:
+  tags: [docker]
+  stage: build_binary
+  image: golang:alpine
+  script:
+    - go build .
+
+create_image:
+  tags: [docker]
+  stage: create_image
+  image: docker:latest
+  before_script:
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+  script:
+    - docker build -t $IMAGE .
+    - docker push $IMAGE    

@@ -1,0 +1,19 @@
+{{define "MyUserList"}}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Управление пользователями</title>
+</head>
+<body>
+    <ul>
+        {{range .UserList}}
+        <li>{{.Email}}&nbsp:&nbsp<a href="/user/{{.ID}}">{{.Name}}</a>&nbsp&nbsp&nbsp<a href="/deluser/{{.ID}}">Del</a></li>
+        {{end}}
+    </ul>
+    <div><a href="/newuser/">Новый&nbspпользователь</a></div>
+    <p><a href="/">Back</a></p>
+</body>
+</html>
+{{end}}

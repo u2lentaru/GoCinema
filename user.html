@@ -1,0 +1,24 @@
+{{define "MyUser"}}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editing&nbsp{{.Name}}</title>
+</head>
+<body>
+    <form action="/usersave" method="GET" enctype="application/x-www-form-urlencoded">
+    <div><input type="hidden" name="id" value="{{.ID}}"></div>
+    <div><input type="text" size="50" name="name" value={{.Name}}></div>
+    <div><input type="text" size="50" name="email" value={{.Email}}></div>
+    <!-- <select id="role">
+        <option value="0">NOTSET</option>
+        <option value="1">CLIENT</option>
+        <option value="1">ADMIN</option>
+    </select> -->
+    <div><input type="submit" value="Save"></div>
+    </form>
+    <p><a href="/">Назад</a></p>
+</body>
+</html>
+{{end}}
