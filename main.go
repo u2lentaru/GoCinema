@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"log"
 	"net/http"
@@ -8,11 +9,9 @@ import (
 	"text/template"
 	"time"
 
-	_ "github.com/go-sql-driver/mysql"
+	// _ "github.com/go-sql-driver/mysql"
 	"github.com/gorilla/mux"
-	// "github.com/ziutek/mymysql/mysql"
-	// _ "github.com/ziutek/mymysql/native"
-	//github.com/jackc/pgx
+	"github.com/jackc/pgx/v4"
 )
 
 // TMovie - movie struct
@@ -53,7 +52,8 @@ var myList = TMovieList{
 
 // Server - server struct
 type Server struct {
-	db       *sql.DB
+	// db       *sql.DB
+	db       *pgx.Conn
 	currUser string
 	currRole string
 	email    string
@@ -66,20 +66,39 @@ func main() {
 	// dbUser := "movie_user"
 	// dbPwd := "movie_user_pwd"
 
-	DSN := "u2:qw12345@tcp(localhost:3306)/movie_base?charset=utf8"
+	// DSN := "u2:qw12345@tcp(localhost:3306)/movie_base?charset=utf8"
+	// DSN := "postgres://movie_user:movie_user_pwd@localhost:5432/movie_base?sslmode=disable"
+	DSN := "postgres://postgres:postgres@postgres:5432/postgres?sslmode=disable"
 
 	// log.Println("DSN ", DSN)
-	dbs, err := sql.Open("mysql", DSN)
+	// dbs, err := sql.Open("mysql", DSN)
+	ctx := context.Background()
+	log.Println("Before pgx.Connect")
+	conn, err := pgx.Connect(ctx, DSN)
+	log.Println("Before err checking")
+
 	if err != nil {
-		log.Fatal(err)
+		for attempt := 0; attempt < 10; attempt++ {
+			if conn, err := pgx.Connect(context.Background(), DSN); err == nil {
+				log.Println("db connected!", conn)
+
+				break
+			}
+			log.Println("Cant connect db!", attempt)
+			time.Sleep(time.Duration(attempt+1) * time.Second)
+		}
 	}
+
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
 
 	// db.SetConnMaxLifetime(5 * time.Minute)
 	// db.SetMaxOpenConns(25)
 	// db.SetMaxIdleConns(25)*
 
 	defer func() {
-		if err = dbs.Close(); err != nil {
+		if err = conn.Close(ctx); err != nil {
 			log.Fatal(err)
 		}
 	}()
@@ -91,12 +110,13 @@ func main() {
 	// 	panic(err)
 	// }
 
-	if err := dbs.Ping(); err != nil {
-		log.Fatal(err)
-	}
-	log.Println("db pinged!")
+	// if err := dbs.Ping(); err != nil {
+	// 	log.Fatal(err)
+	// }
+	// log.Println("db pinged!")
 
-	serv := Server{db: dbs, currUser: "", currRole: "0", email: "", movieID: "0"}
+	// serv := Server{db: dbs, currUser: "", currRole: "0", email: "", movieID: "0"}
+	serv := Server{db: conn, currUser: "", currRole: "0", email: "", movieID: "0"}
 
 	//router := http.NewServeMux()
 	router := mux.NewRouter()
@@ -163,7 +183,7 @@ func (server *Server) viewMovie(w http.ResponseWriter, r *http.Request) {
 	server.movieID = myMovie.ID
 
 	rents := 0
-	row := server.db.QueryRow("select count(*) from movie_base.orders where user_id = ? and movie_id = ?", server.currUser, myMovie.ID)
+	row := server.db.QueryRow(context.Background(), "select count(*) from movie_base.orders where user_id = ? and movie_id = ?", server.currUser, myMovie.ID)
 	log.Println("server.currUser, myMovie.ID ", server.currUser, myMovie.ID)
 	err := row.Scan(&rents)
 
@@ -204,7 +224,7 @@ func (server *Server) handleProfile(w http.ResponseWriter, r *http.Request) {
 	myProfileList := TProfileList{}
 
 	tUnix := 0
-	row := server.db.QueryRow("select display_name, email, phone_number, birth_date from movie_base.users where id = ?", server.currUser)
+	row := server.db.QueryRow(context.Background(), "select display_name, email, phone_number, birth_date from movie_base.users where id = ?", server.currUser)
 	err := row.Scan(&myProfileList.Name, &myProfileList.Email, &myProfileList.Phone, &tUnix)
 	if err != nil {
 		return
@@ -214,7 +234,7 @@ func (server *Server) handleProfile(w http.ResponseWriter, r *http.Request) {
 	myProfileList.BirthDate = (time.Unix(int64(tUnix), 0)).Format("2 January 2006")
 
 	pay := 0
-	row = server.db.QueryRow("select sum(amount) from movie_base.payments where user_id = ?", server.currUser)
+	row = server.db.QueryRow(context.Background(), "select sum(amount) from movie_base.payments where user_id = ?", server.currUser)
 	err = row.Scan(&pay)
 
 	if err == sql.ErrNoRows {
@@ -222,7 +242,7 @@ func (server *Server) handleProfile(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ord := 0
-	row = server.db.QueryRow("select sum(amount) from movie_base.orders where user_id = ?", server.currUser)
+	row = server.db.QueryRow(context.Background(), "select sum(amount) from movie_base.orders where user_id = ?", server.currUser)
 	err = row.Scan(&ord)
 
 	if err == sql.ErrNoRows {
@@ -253,7 +273,7 @@ func (server *Server) handlePayment(w http.ResponseWriter, r *http.Request) {
 	var myPaymentList = TPaymentList{0}
 
 	pay := 0
-	row := server.db.QueryRow("select sum(amount) from movie_base.payments where user_id = ?", server.currUser)
+	row := server.db.QueryRow(context.Background(), "select sum(amount) from movie_base.payments where user_id = ?", server.currUser)
 	err := row.Scan(&pay)
 
 	if err == sql.ErrNoRows {
@@ -261,7 +281,7 @@ func (server *Server) handlePayment(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ord := 0
-	row = server.db.QueryRow("select sum(amount) from movie_base.orders where user_id = ?", server.currUser)
+	row = server.db.QueryRow(context.Background(), "select sum(amount) from movie_base.orders where user_id = ?", server.currUser)
 	err = row.Scan(&ord)
 
 	if err == sql.ErrNoRows {
@@ -284,7 +304,7 @@ func (server *Server) handleSaveLogin(w http.ResponseWriter, r *http.Request) {
 
 	server.email = r.FormValue("user")
 
-	row := server.db.QueryRow("select id, role from movie_base.users where email = ?", server.email)
+	row := server.db.QueryRow(context.Background(), "select id, role from movie_base.users where email = ?", server.email)
 	if err := row.Scan(&server.currUser, &server.currRole); err != nil {
 		log.Println("err ", err)
 	}
@@ -305,7 +325,7 @@ func (server *Server) handleSavePayment(w http.ResponseWriter, r *http.Request) 
 	addition := r.FormValue("addition")
 
 	// icu, _ := strconv.Atoi(server.currUser)
-	res, err := server.db.Exec("insert into movie_base.payments (amount, user_id, transaction_id, status, created_at, updated_at) VALUES (?,?,0,0,NULL,NULL)", addition, server.currUser)
+	res, err := server.db.Exec(context.Background(), "insert into movie_base.payments (amount, user_id, transaction_id, status, created_at, updated_at) VALUES (?,?,0,0,NULL,NULL)", addition, server.currUser)
 	// res, err := server.db.Exec("insert into movie_base.payments (amount) VALUES (?)", addition)
 	if err != nil {
 		log.Printf("err %v, res %v", err, res)
@@ -324,7 +344,7 @@ func (server *Server) handleSaveOrder(w http.ResponseWriter, r *http.Request) {
 
 	order := 100
 
-	res, err := server.db.Exec("insert into movie_base.orders (amount, user_id, movie_id, created_at) VALUES (?,?,?,0)", order, server.currUser, server.movieID)
+	res, err := server.db.Exec(context.Background(), "insert into movie_base.orders (amount, user_id, movie_id, created_at) VALUES (?,?,?,0)", order, server.currUser, server.movieID)
 	if err != nil {
 		log.Printf("err %v, res %v", err, res)
 		return
@@ -350,10 +370,12 @@ func (server *Server) handleUsers(w http.ResponseWriter, r *http.Request) {
 
 	var MyUserList TUserList
 
-	rows, err := server.db.Query("select id, display_name, email from movie_base.users")
+	rows, err := server.db.Query(context.Background(), "select id, display_name, email from movie_base.users")
 
 	defer func() {
-		if err = rows.Close(); err != nil {
+		// if err = rows.Close(); err != nil {
+		rows.Close()
+		if err != nil {
 			log.Fatal(err)
 		}
 	}()
@@ -378,7 +400,7 @@ func (server *Server) handleUser(w http.ResponseWriter, r *http.Request) {
 	var user = template.Must(template.New("MyUser").ParseFiles("./user.html"))
 	url := strings.Split(r.URL.Path, "/")
 	MyUser := TUser{}
-	row := server.db.QueryRow("select id, display_name, email from movie_base.users where id = ?", url[len(url)-1])
+	row := server.db.QueryRow(context.Background(), "select id, display_name, email from movie_base.users where id = ?", url[len(url)-1])
 	err := row.Scan(&MyUser.ID, &MyUser.Name, &MyUser.Email)
 
 	// log.Println(MyUser.Name)
