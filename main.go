@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"log"
 	"net/http"
+	"strconv"
 	"strings"
 	"text/template"
 	"time"
@@ -67,8 +68,8 @@ func main() {
 	// dbPwd := "movie_user_pwd"
 
 	// DSN := "u2:qw12345@tcp(localhost:3306)/movie_base?charset=utf8"
-	// DSN := "postgres://movie_user:movie_user_pwd@localhost:5432/movie_base?sslmode=disable"
-	DSN := "postgres://postgres:postgres@postgres:5432/postgres?sslmode=disable"
+	DSN := "postgres://movie_user:movie_user_pwd@postgres:5432/movie_base?sslmode=disable"
+	// DSN := "postgres://postgres:postgres@postgres:5432/postgres?sslmode=disable"
 
 	// log.Println("DSN ", DSN)
 	// dbs, err := sql.Open("mysql", DSN)
@@ -303,11 +304,16 @@ func (server *Server) handleSaveLogin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	server.email = r.FormValue("user")
+	log.Println("server.email %w", server.email)
 
-	row := server.db.QueryRow(context.Background(), "select id, role from movie_base.users where email = ?", server.email)
-	if err := row.Scan(&server.currUser, &server.currRole); err != nil {
+	// row := server.db.QueryRow(context.Background(), "select id, role from movie_base.users where email = ?", server.email)
+	row := server.db.QueryRow(context.Background(), "select id, role from users where email = $1;", server.email)
+	usr := 0
+	// if err := row.Scan(&server.currUser, &server.currRole); err != nil {
+	if err := row.Scan(&usr, &server.currRole); err != nil {
 		log.Println("err ", err)
 	}
+	server.currUser = strconv.Itoa(usr)
 
 	// log.Println("server.currRole ", server.currRole)
 	// server.currUser = "1"

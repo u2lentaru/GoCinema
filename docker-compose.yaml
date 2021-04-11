@@ -29,8 +29,10 @@ services:
     environment:
       - POSTGRES_USER=postgres 
       - POSTGRES_PASSWORD=postgres
-      - POSTGRES_DB=postgres
-      # - POSTGRES_DB=movie_base
+      # - POSTGRES_DB=postgres
+      # - POSTGRES_USER=movie_user 
+      # - POSTGRES_PASSWORD=movie_user_pwd
+      - POSTGRES_DB=movie_base
       - PGDATA=/var/lib/postgresql/data
     ports:
       - '5432:5432'
