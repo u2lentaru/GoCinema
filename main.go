@@ -232,25 +232,30 @@ func (server *Server) handleProfile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	myProfileList.BirthDate = "01.01.2000"
+	// myProfileList.BirthDate = "01.01.2000"
+	myProfileList.BirthDate = (t).Format("2 January 2006")
 	// myProfileList.BirthDate = (time.Unix(int64(tUnix), 0)).Format("2 January 2006")
 
-	pay := 0
+	pay := 0.0
 	// row = server.db.QueryRow(context.Background(), "select sum(amount) from movie_base.payments where user_id = ?", server.currUser)
-	row = server.db.QueryRow(context.Background(), "select sum(amount) from payments where user_id = $1;", server.currUser)
+	row = server.db.QueryRow(context.Background(), "select sum(amount)::numeric::float8 from payments where user_id = $1;", server.currUser)
 	err = row.Scan(&pay)
 
 	if err == sql.ErrNoRows {
 		pay = 0
+	} else if err != nil {
+		log.Println("select sum(amount) from payments error ", err)
 	}
 
-	ord := 0
+	ord := 0.0
 	// row = server.db.QueryRow(context.Background(), "select sum(amount) from movie_base.orders where user_id = ?", server.currUser)
-	row = server.db.QueryRow(context.Background(), "select sum(amount) from orders where user_id = $1;", server.currUser)
+	row = server.db.QueryRow(context.Background(), "select sum(amount)::numeric::float8 from orders where user_id = $1;", server.currUser)
 	err = row.Scan(&ord)
 
 	if err == sql.ErrNoRows {
 		ord = 0
+	} else if err != nil {
+		log.Println("select sum(amount) from orders error ", err)
 	}
 
 	myProfileList.Balance = float32(pay - ord)
