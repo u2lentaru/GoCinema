@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"log"
 	"net/http"
-	"strconv"
 	"strings"
 	"text/template"
 	"time"
@@ -74,9 +73,7 @@ func main() {
 	// log.Println("DSN ", DSN)
 	// dbs, err := sql.Open("mysql", DSN)
 	ctx := context.Background()
-	log.Println("Before pgx.Connect")
 	conn, err := pgx.Connect(ctx, DSN)
-	log.Println("Before err checking")
 
 	if err != nil {
 		for attempt := 0; attempt < 10; attempt++ {
@@ -184,7 +181,8 @@ func (server *Server) viewMovie(w http.ResponseWriter, r *http.Request) {
 	server.movieID = myMovie.ID
 
 	rents := 0
-	row := server.db.QueryRow(context.Background(), "select count(*) from movie_base.orders where user_id = ? and movie_id = ?", server.currUser, myMovie.ID)
+	// row := server.db.QueryRow(context.Background(), "select count(*) from movie_base.orders where user_id = ? and movie_id = ?", server.currUser, myMovie.ID)
+	row := server.db.QueryRow(context.Background(), "select count(*) from orders where user_id = $1 and movie_id = $2;", server.currUser, myMovie.ID)
 	log.Println("server.currUser, myMovie.ID ", server.currUser, myMovie.ID)
 	err := row.Scan(&rents)
 
@@ -224,18 +222,22 @@ func (server *Server) handleProfile(w http.ResponseWriter, r *http.Request) {
 
 	myProfileList := TProfileList{}
 
-	tUnix := 0
-	row := server.db.QueryRow(context.Background(), "select display_name, email, phone_number, birth_date from movie_base.users where id = ?", server.currUser)
-	err := row.Scan(&myProfileList.Name, &myProfileList.Email, &myProfileList.Phone, &tUnix)
+	// tUnix := 0
+	t := time.Now()
+	// row := server.db.QueryRow(context.Background(), "select display_name, email, phone_number, birth_date from movie_base.users where id = ?", server.currUser)
+	row := server.db.QueryRow(context.Background(), "select display_name, email, phone_number, birth_date from users where id = $1;", server.currUser)
+	err := row.Scan(&myProfileList.Name, &myProfileList.Email, &myProfileList.Phone, &t)
 	if err != nil {
+		log.Println(myProfileList, err)
 		return
 	}
 
-	// myProfileList.BirthDate = "01.01.2000"
-	myProfileList.BirthDate = (time.Unix(int64(tUnix), 0)).Format("2 January 2006")
+	myProfileList.BirthDate = "01.01.2000"
+	// myProfileList.BirthDate = (time.Unix(int64(tUnix), 0)).Format("2 January 2006")
 
 	pay := 0
-	row = server.db.QueryRow(context.Background(), "select sum(amount) from movie_base.payments where user_id = ?", server.currUser)
+	// row = server.db.QueryRow(context.Background(), "select sum(amount) from movie_base.payments where user_id = ?", server.currUser)
+	row = server.db.QueryRow(context.Background(), "select sum(amount) from payments where user_id = $1;", server.currUser)
 	err = row.Scan(&pay)
 
 	if err == sql.ErrNoRows {
@@ -243,7 +245,8 @@ func (server *Server) handleProfile(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ord := 0
-	row = server.db.QueryRow(context.Background(), "select sum(amount) from movie_base.orders where user_id = ?", server.currUser)
+	// row = server.db.QueryRow(context.Background(), "select sum(amount) from movie_base.orders where user_id = ?", server.currUser)
+	row = server.db.QueryRow(context.Background(), "select sum(amount) from orders where user_id = $1;", server.currUser)
 	err = row.Scan(&ord)
 
 	if err == sql.ErrNoRows {
@@ -274,7 +277,8 @@ func (server *Server) handlePayment(w http.ResponseWriter, r *http.Request) {
 	var myPaymentList = TPaymentList{0}
 
 	pay := 0
-	row := server.db.QueryRow(context.Background(), "select sum(amount) from movie_base.payments where user_id = ?", server.currUser)
+	// row := server.db.QueryRow(context.Background(), "select sum(amount) from movie_base.payments where user_id = ?", server.currUser)
+	row := server.db.QueryRow(context.Background(), "select sum(amount) from payments where user_id = $1;", server.currUser)
 	err := row.Scan(&pay)
 
 	if err == sql.ErrNoRows {
@@ -282,7 +286,8 @@ func (server *Server) handlePayment(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ord := 0
-	row = server.db.QueryRow(context.Background(), "select sum(amount) from movie_base.orders where user_id = ?", server.currUser)
+	// row = server.db.QueryRow(context.Background(), "select sum(amount) from movie_base.orders where user_id = ?", server.currUser)
+	row = server.db.QueryRow(context.Background(), "select sum(amount) from orders where user_id = $1;", server.currUser)
 	err = row.Scan(&ord)
 
 	if err == sql.ErrNoRows {
@@ -307,13 +312,10 @@ func (server *Server) handleSaveLogin(w http.ResponseWriter, r *http.Request) {
 	log.Println("server.email %w", server.email)
 
 	// row := server.db.QueryRow(context.Background(), "select id, role from movie_base.users where email = ?", server.email)
-	row := server.db.QueryRow(context.Background(), "select id, role from users where email = $1;", server.email)
-	usr := 0
-	// if err := row.Scan(&server.currUser, &server.currRole); err != nil {
-	if err := row.Scan(&usr, &server.currRole); err != nil {
+	row := server.db.QueryRow(context.Background(), "select id::text, role from users where email = $1;", server.email)
+	if err := row.Scan(&server.currUser, &server.currRole); err != nil {
 		log.Println("err ", err)
 	}
-	server.currUser = strconv.Itoa(usr)
 
 	// log.Println("server.currRole ", server.currRole)
 	// server.currUser = "1"
@@ -331,7 +333,8 @@ func (server *Server) handleSavePayment(w http.ResponseWriter, r *http.Request) 
 	addition := r.FormValue("addition")
 
 	// icu, _ := strconv.Atoi(server.currUser)
-	res, err := server.db.Exec(context.Background(), "insert into movie_base.payments (amount, user_id, transaction_id, status, created_at, updated_at) VALUES (?,?,0,0,NULL,NULL)", addition, server.currUser)
+	// res, err := server.db.Exec(context.Background(), "insert into movie_base.payments (amount, user_id, transaction_id, status, created_at, updated_at) VALUES (?,?,0,0,NULL,NULL)", addition, server.currUser)
+	res, err := server.db.Exec(context.Background(), "insert into payments (amount, user_id, transaction_id, status, created_at, updated_at) VALUES ($1,$2,0,0,NOW(),NOW());", addition, server.currUser)
 	// res, err := server.db.Exec("insert into movie_base.payments (amount) VALUES (?)", addition)
 	if err != nil {
 		log.Printf("err %v, res %v", err, res)
@@ -350,7 +353,8 @@ func (server *Server) handleSaveOrder(w http.ResponseWriter, r *http.Request) {
 
 	order := 100
 
-	res, err := server.db.Exec(context.Background(), "insert into movie_base.orders (amount, user_id, movie_id, created_at) VALUES (?,?,?,0)", order, server.currUser, server.movieID)
+	// res, err := server.db.Exec(context.Background(), "insert into movie_base.orders (amount, user_id, movie_id, created_at) VALUES (?,?,?,0)", order, server.currUser, server.movieID)
+	res, err := server.db.Exec(context.Background(), "insert into orders (amount, user_id, movie_id, created_at) VALUES ($1,$2,$3,NOW());", order, server.currUser, server.movieID)
 	if err != nil {
 		log.Printf("err %v, res %v", err, res)
 		return
@@ -376,7 +380,8 @@ func (server *Server) handleUsers(w http.ResponseWriter, r *http.Request) {
 
 	var MyUserList TUserList
 
-	rows, err := server.db.Query(context.Background(), "select id, display_name, email from movie_base.users")
+	// rows, err := server.db.Query(context.Background(), "select id, display_name, email from movie_base.users")
+	rows, err := server.db.Query(context.Background(), "select id, display_name, email from users;")
 
 	defer func() {
 		// if err = rows.Close(); err != nil {
@@ -406,7 +411,8 @@ func (server *Server) handleUser(w http.ResponseWriter, r *http.Request) {
 	var user = template.Must(template.New("MyUser").ParseFiles("./user.html"))
 	url := strings.Split(r.URL.Path, "/")
 	MyUser := TUser{}
-	row := server.db.QueryRow(context.Background(), "select id, display_name, email from movie_base.users where id = ?", url[len(url)-1])
+	// row := server.db.QueryRow(context.Background(), "select id, display_name, email from movie_base.users where id = ?", url[len(url)-1])
+	row := server.db.QueryRow(context.Background(), "select id, display_name, email from users where id = $1;", url[len(url)-1])
 	err := row.Scan(&MyUser.ID, &MyUser.Name, &MyUser.Email)
 
 	// log.Println(MyUser.Name)
